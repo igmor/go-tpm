@@ -991,12 +991,19 @@ func (n Name) MatchesPublic(p Public) (bool, error) {
 	if n.Digest == nil {
 		return false, errors.New("Name doesn't have a Digest, can't compare to Public")
 	}
-	expected, err := p.Name()
+	pubEncoded, err := p.Encode()
 	if err != nil {
 		return false, err
 	}
+	hash, err := n.Digest.Alg.Hash()
+	if err != nil {
+		return false, err
+	}
+	nameHash := hash.New()
+	nameHash.Write(pubEncoded)
+
 	// No secrets, so no constant-time comparison
-	return bytes.Equal(expected.Digest.Value, n.Digest.Value), nil
+	return bytes.Equal(nameHash.Sum(nil), n.Digest.Value), nil
 }
 
 // HashValue is an algorithm-specific hash value.
